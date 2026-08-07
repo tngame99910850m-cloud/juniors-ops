@@ -304,6 +304,85 @@
       line-height: 1.4;
     }
 
+    /* ───────────────────────── photo gallery (tap to reveal) ───────────────────────── */
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 22px;
+      margin-top: 4vh;
+    }
+    .photo-card { height: 320px; }         /* taller than the reason cards */
+    .photo-card .card-front {
+      padding: 0;
+      overflow: hidden;
+      background: linear-gradient(150deg, var(--blush-soft), var(--blush));
+      color: var(--rose-deep);
+      position: relative;
+    }
+    .photo-card .card-front img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: opacity 0.6s var(--ease);
+    }
+    /* when the image is missing, .no-photo hides the <img> and the soft fallback shows */
+    .photo-card .card-front.no-photo img { opacity: 0; }
+    .photo-card .fallback {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4em;
+      text-align: center;
+      padding: 20px;
+    }
+    .photo-card .card-front.no-photo .fallback { display: flex; }
+    .photo-card .fallback .heart { font-size: 2.2rem; }
+    .photo-card .fallback small {
+      font-family: var(--serif-body);
+      font-style: italic;
+      letter-spacing: 0.06em;
+      color: var(--ink-soft);
+      font-size: 0.8rem;
+    }
+    /* caption ribbon over the photo */
+    .photo-card .caption {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      padding: 30px 16px 14px;
+      background: linear-gradient(180deg, transparent, rgba(75, 63, 58, 0.55));
+      color: #fff8f2;
+      font-family: var(--serif-display);
+      font-size: 1.15rem;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .photo-card .card-front.no-photo .caption { color: var(--rose-deep); background: none; }
+    .photo-card .caption .tap {
+      font-family: var(--serif-body);
+      font-style: italic;
+      font-size: 0.68rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      opacity: 0.9;
+      white-space: nowrap;
+    }
+    .photo-card .card-back {
+      background: linear-gradient(150deg, #fffaf3, var(--cream-deep));
+      color: var(--ink);
+      font-family: var(--serif-display);
+      font-size: 1.28rem;
+      line-height: 1.4;
+      padding: 26px;
+    }
+
     /* ───────────────────────── final message ───────────────────────── */
     .letter {
       background: linear-gradient(180deg, #fffdf9, #fbf1e6);
@@ -511,6 +590,54 @@
     </div>
   </section>
 
+  <!-- ══════════════════ 2½ · PHOTO GALLERY (tap a photo → a note) ══════════════════ -->
+  <section id="gallery">
+    <div class="wrap">
+      <svg class="divider reveal" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7-4.35-9.5-8.5C1 9 2.7 6 6 6c2 0 3.2 1.2 4 2.3C10.8 7.2 12 6 14 6c3.3 0 5 3 3.5 6.5C19 16.65 12 21 12 21z"/></svg>
+      <h2 class="section-title reveal">Us, In Pictures</h2>
+      <p class="section-intro reveal">tap a photo</p>
+
+      <div class="photo-grid">
+        <!-- ✎ EDIT · PHOTOS
+             Each photo is one .card.photo-card block.
+             • Put your image file next to index.html and set its name in  src="..."
+               (recommended names: photo1.jpg, photo2.jpg, ... — but anything works).
+             • Change the caption (over the photo) and the note (on the back — what you
+               see when she taps it), just like the reasons cards.
+             • No image yet? A soft placeholder shows automatically until you add one.
+             • Add or remove blocks freely. Portrait-ish photos crop nicely. -->
+
+        <div class="card photo-card reveal" data-delay="1"><div class="card-inner">
+          <div class="card-face card-front">
+            <img src="photo1.jpg" alt="A photo of us" />
+            <div class="fallback"><span class="heart">♡</span><small>add your photo &nbsp;→&nbsp; photo1.jpg</small></div>
+            <div class="caption"><span>that day</span><span class="tap">tap ♡</span></div>
+          </div>
+          <div class="card-face card-back">The note behind this photo — what you were both feeling, or what you never told her about that moment.</div>
+        </div></div>
+
+        <div class="card photo-card reveal" data-delay="2"><div class="card-inner">
+          <div class="card-face card-front">
+            <img src="photo2.jpg" alt="A photo of us" />
+            <div class="fallback"><span class="heart">♡</span><small>add your photo &nbsp;→&nbsp; photo2.jpg</small></div>
+            <div class="caption"><span>this one</span><span class="tap">tap ♡</span></div>
+          </div>
+          <div class="card-face card-back">A second little note. Keep them short and true — one sentence is plenty.</div>
+        </div></div>
+
+        <div class="card photo-card reveal" data-delay="3"><div class="card-inner">
+          <div class="card-face card-front">
+            <img src="photo3.jpg" alt="A photo of us" />
+            <div class="fallback"><span class="heart">♡</span><small>add your photo &nbsp;→&nbsp; photo3.jpg</small></div>
+            <div class="caption"><span>and this</span><span class="tap">tap ♡</span></div>
+          </div>
+          <div class="card-face card-back">The third note. Add as many photos as you like by copying a block.</div>
+        </div></div>
+
+      </div>
+    </div>
+  </section>
+
   <!-- ══════════════════ 3 · REASONS I LOVE YOU ══════════════════ -->
   <section id="reasons">
     <div class="wrap">
@@ -633,6 +760,23 @@
         card.setAttribute('role', 'button');
         card.addEventListener('keydown', function (e) {
           if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.classList.toggle('flipped'); }
+        });
+      });
+    })();
+
+    /* ── photo cards: show the soft placeholder until a real image loads ── */
+    (function () {
+      var imgs = document.querySelectorAll('.photo-card .card-front img');
+      imgs.forEach(function (img) {
+        var front = img.closest('.card-front');
+        function markMissing() { front.classList.add('no-photo'); }
+        function markPresent() { front.classList.remove('no-photo'); }
+        if (img.complete) {
+          (img.naturalWidth > 0 ? markPresent : markMissing)();
+        }
+        img.addEventListener('error', markMissing);
+        img.addEventListener('load', function () {
+          (img.naturalWidth > 0 ? markPresent : markMissing)();
         });
       });
     })();

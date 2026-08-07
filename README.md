@@ -17,8 +17,9 @@ and search for **`✎ EDIT`** — each spot is labeled. There are five things to
 | 1 | Her name | `✎ EDIT · NAME` | 1 |
 | 2 | Opening lines | `✎ EDIT · OPENING` | 2 short lines |
 | 3 | Timeline moments | `✎ EDIT · TIMELINE` | 4–6 blocks |
-| 4 | "Reasons I love you" cards | `✎ EDIT · REASONS` | 8–10 cards |
-| 5 | Final message | `✎ EDIT · MESSAGE` | your words |
+| 4 | Photo gallery (tap → note) | `✎ EDIT · PHOTOS` | as many as you like |
+| 5 | "Reasons I love you" cards | `✎ EDIT · REASONS` | 8–10 cards |
+| 6 | Final message | `✎ EDIT · MESSAGE` | your words |
 
 ### Timeline moments
 Each memory is one `<article class="moment ...">` block. Copy a block to add a
@@ -30,6 +31,14 @@ opposite sides on desktop.
 Each reason is one `<div class="card ...">` block. The **front** shows the number
 automatically; put the reason itself inside `card-back`. Tap (or click, or press
 Enter) to flip. Add cards 9 and 10 by copying a block and bumping the `no`.
+
+### Photo gallery (a photo that flips to a note)
+Each photo is one `<div class="card photo-card ...">` block. Put your image files
+next to `index.html` and set each one's name in `src="..."` (e.g. `photo1.jpg`,
+`photo2.jpg`, …). The **front** is the photo with a small caption; tap it and it
+flips to reveal the **note** on the back — same feel as the reasons cards. Until you
+add an image, a soft blush placeholder shows in its place, so nothing looks broken.
+Portrait-ish photos crop best. Add or remove blocks freely.
 
 ### The final message
 This is the heart of the page — write it in your own voice. Add or remove `<p>`
