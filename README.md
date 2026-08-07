@@ -7,9 +7,27 @@ There's nothing to install and no build step. Open `index.html` in a browser to 
 
 ---
 
-## How to make it yours
+## ✏️ Easiest way: edit it right on the page (no code)
 
-Everything you personalize lives in **`index.html`**. Open it in any text editor
+Open the site on your phone or computer and it starts in **Editing** mode:
+
+- **Tap any text** — her name, the memories, the reasons, your message — and just type. It saves automatically **on that device**.
+- **Tap "⤴ change photo"** on any picture to swap in your own. Also saved on the device.
+- Tap **Preview** to see it exactly as she will (tap **✎ Edit** to come back).
+- When it's perfect, tap **Download final page** — you get a single `for-her.html`
+  file with all your words and photos baked in and editing turned off. That file
+  *is* her page: send it to her directly, or send it to me and I'll host it.
+
+> Your edits live in that one browser. If you edit on your phone, do the final
+> **Download** on your phone. Want me to lock in your version permanently on the
+> live site instead? Just send me your `for-her.html` (or tell me the final text)
+> and say **"lock it."**
+
+---
+
+## Or edit the source directly
+
+Everything you personalize also lives in **`index.html`**. Open it in any text editor
 and search for **`✎ EDIT`** — each spot is labeled. There are five things to change:
 
 | # | What | Search for | How many |
