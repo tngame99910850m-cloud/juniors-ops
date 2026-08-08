@@ -895,7 +895,7 @@
 
   <!-- ══════════════════ MUSIC (optional) ══════════════════ -->
   <!-- Drop a file named music.mp3 beside this page to enable the toggle. -->
-  <audio id="song" loop="" preload="none">
+  <audio id="song" loop="" preload="metadata">
     <source src="music.mp3" type="audio/mpeg">
   </audio>
   <button class="music-toggle" id="musicToggle" aria-label="Toggle music" aria-pressed="false">
@@ -1012,22 +1012,30 @@
       });
     });
 
-    /* ── music toggle (appears only if music.mp3 loads) ───── */
+    /* ── music toggle (music.mp3 ships with the page) ─────── */
     (function () {
-      var audio = $('#song'), toggle = $('#musicToggle'), ok = false;
+      var audio = $('#song'), toggle = $('#musicToggle');
       if (!audio || !toggle) return;
-      audio.addEventListener('canplay', function () { ok = true; toggle.style.display = 'flex'; });
-      audio.addEventListener('error', function () { toggle.style.display = 'none'; });
+      var failed = false;
+      function show() { if (!failed) toggle.style.display = 'flex'; }
+      function fadeIn() {
+        var v = 0, f = setInterval(function () { v = Math.min(0.6, v + 0.04); audio.volume = v; if (v >= 0.6) clearInterval(f); }, 60);
+        toggle.classList.add('playing'); toggle.setAttribute('aria-pressed', 'true');
+      }
+      audio.addEventListener('loadedmetadata', show);
+      audio.addEventListener('canplay', show);
+      audio.addEventListener('error', function () { failed = true; toggle.style.display = 'none'; });
+      // show promptly even on slow links; a real load error still hides it
+      setTimeout(show, 1000);
       try { audio.load(); } catch (e) {}
       toggle.addEventListener('click', function () {
-        if (!ok) return;
         if (audio.paused) {
-          audio.volume = 0;
-          audio.play().then(function () {
-            var v = 0, f = setInterval(function () { v = Math.min(0.6, v + 0.04); audio.volume = v; if (v >= 0.6) clearInterval(f); }, 60);
-            toggle.classList.add('playing'); toggle.setAttribute('aria-pressed', 'true');
-          }).catch(function () {});
-        } else { audio.pause(); toggle.classList.remove('playing'); toggle.setAttribute('aria-pressed', 'false'); }
+          audio.volume = 0;                 // start silent, then fade up (also lets play begin while buffering)
+          var pr = audio.play();
+          if (pr && pr.then) pr.then(fadeIn).catch(function () {}); else fadeIn();
+        } else {
+          audio.pause(); toggle.classList.remove('playing'); toggle.setAttribute('aria-pressed', 'false');
+        }
       });
     })();
 
