@@ -750,11 +750,38 @@
     /* the closing heartbeat in the footer, a touch bigger and rosier */
     footer .heartbeat { color: var(--rose); filter: drop-shadow(0 2px 10px rgba(217,139,139,0.4)); }
 
+    /* ─────── gentle guidance for her ─────── */
+    /* a soft welcome line in the hero, so she knows things are tappable */
+    .hero-hint {
+      margin-top: 2.2em;
+      max-width: 26ch;
+      font-family: var(--serif-body);
+      font-style: italic;
+      font-size: 0.86rem;
+      line-height: 1.6;
+      color: var(--ink-soft);
+      background: rgba(255, 252, 247, 0.6);
+      border: 1px solid rgba(201, 161, 90, 0.32);
+      border-radius: 18px;
+      padding: 9px 16px;
+    }
+    .js .hero-hint { opacity: 0; animation: fadeUp 1.8s var(--ease) 3s forwards; }
+
+    /* the little "tap" labels gently breathe so she notices them */
+    .card-front .hint, .photo-card .caption .tap { animation: hintPulse 2.2s ease-in-out infinite; }
+    @keyframes hintPulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+    /* a one-time "peek" so she sees the cards can flip */
+    @keyframes peek { 0%, 100% { transform: rotateY(0deg); } 42% { transform: rotateY(-34deg); } 72% { transform: rotateY(0deg); } }
+    .card.peek .card-inner { animation: peek 2s var(--ease) 1; }
+
     @media (prefers-reduced-motion: reduce) {
       .petals { display: none; }
       .section-title::after,
       .reasons-grid .card-front::before,
       .reasons-grid .card-front::after,
+      .card-front .hint, .photo-card .caption .tap,
+      .card.peek .card-inner,
       .music-toggle:not(.playing) { animation: none; }
     }
   </style>
@@ -787,6 +814,8 @@
 
     <!-- ✎ EDIT · OPENING  (the short line beneath the name) -->
     <p class="subline">for you, with everything I have</p>
+
+    <p class="hero-hint">tap the photos &amp; the hearts to open them ♡ — and touch the screen for our song ♪</p>
 
     <a class="scroll-cue" href="#timeline" aria-label="Scroll down">
       <span>our story</span>
@@ -1176,6 +1205,26 @@
       });
     })();
 
+    /* ── a gentle guide for her: a one-time "peek" flip on the first
+          photo and first heart card so she sees the cards open on tap ── */
+    (function () {
+      function editing() { return root.classList.contains('editing'); }
+      var firsts = [document.querySelector('.photo-card'), document.querySelector('.reasons-grid .card')].filter(Boolean);
+      if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (en) {
+            if (!en.isIntersecting) return;
+            var c = en.target; io.unobserve(c);
+            if (!editing() && !c.classList.contains('flipped')) {
+              c.classList.add('peek');
+              setTimeout(function () { c.classList.remove('peek'); }, 2200);
+            }
+          });
+        }, { threshold: 0.6 });
+        firsts.forEach(function (c) { io.observe(c); });
+      }
+    })();
+
     /* ═══════════════ EDIT MODE (owner only, behind a password) ═══════════════ */
     var PASS_HASH = 2883120179;            // hash of the edit password (default: mouhib2026)
     var UNLOCK_KEY = STORE + '.unlock';
@@ -1302,7 +1351,7 @@
           var clone = root.cloneNode(true);
           clone.setAttribute('data-locked', '');
           clone.setAttribute('class', 'js');
-          $$('.edit-bar, .edit-fab, .toast, .photo-change, .owner-lock, input[type=file]', clone).forEach(function (n) { n.remove(); });
+          $$('.edit-bar, .edit-fab, .toast, .photo-change, .owner-lock, .hint-pill, input[type=file]', clone).forEach(function (n) { n.remove(); });
           $$('[contenteditable]', clone).forEach(function (n) { n.removeAttribute('contenteditable'); n.removeAttribute('spellcheck'); });
           $$('[data-edit]', clone).forEach(function (n) { n.removeAttribute('data-edit'); n.removeAttribute('data-placeholder'); });
           $$('[data-photo]', clone).forEach(function (n) { n.removeAttribute('data-photo'); });
