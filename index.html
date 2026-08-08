@@ -579,6 +579,25 @@
     /* shown only when editing is available but currently previewing */
     .can-edit:not(.editing) .edit-fab { display: flex; }
 
+    /* discreet owner lock button (only shown on the locked page) */
+    .owner-lock {
+      position: fixed;
+      left: 14px; bottom: 16px;
+      z-index: 80;
+      width: 30px; height: 30px;
+      padding: 0;
+      border: none;
+      border-radius: 50%;
+      background: transparent;
+      color: var(--gold);
+      font-size: 14px;
+      line-height: 1;
+      opacity: 0.18;
+      cursor: pointer;
+      transition: opacity 0.3s;
+    }
+    .owner-lock:hover, .owner-lock:focus-visible { opacity: 0.85; outline: none; }
+
     /* highlight editable text while editing */
     .editing [data-edit] {
       outline: 1px dashed rgba(201,161,90,0.55);
@@ -1157,137 +1176,174 @@
       });
     })();
 
-    /* ═══════════════ EDIT MODE (only if not locked) ═══════════════ */
-    if (!EDITABLE) return;
-    root.classList.add('can-edit');
+    /* ═══════════════ EDIT MODE (owner only, behind a password) ═══════════════ */
+    var PASS_HASH = 2883120179;            // hash of the edit password (default: mouhib2026)
+    var UNLOCK_KEY = STORE + '.unlock';
+    function hashStr(s) { var h = 5381; for (var i = 0; i < s.length; i++) { h = ((h * 33) + s.charCodeAt(i)) & 0xffffffff; } return h >>> 0; }
+    function isUnlocked() { try { return localStorage.getItem(UNLOCK_KEY) === '1'; } catch (e) { return false; } }
 
-    /* text: save as you type */
-    document.addEventListener('input', function (e) {
-      var el = e.target.closest && e.target.closest('[data-edit]');
-      if (!el) return;
-      data.text = data.text || {};
-      data.text[el.getAttribute('data-edit')] = el.innerHTML;
-      clearTimeout(el._sv); el._sv = setTimeout(saveData, 300);
-    });
+    function enableEditor(startEditing) {
+      if (enableEditor._done) return;
+      enableEditor._done = true;
+      root.classList.add('can-edit');
 
-    function enableText(on) {
-      textEls.forEach(function (el) {
-        if (on) { el.setAttribute('contenteditable', 'true'); el.setAttribute('spellcheck', 'false'); }
-        else el.removeAttribute('contenteditable');
+      /* text: save as you type */
+      document.addEventListener('input', function (e) {
+        var el = e.target.closest && e.target.closest('[data-edit]');
+        if (!el) return;
+        data.text = data.text || {};
+        data.text[el.getAttribute('data-edit')] = el.innerHTML;
+        clearTimeout(el._sv); el._sv = setTimeout(saveData, 300);
       });
-    }
 
-    /* photos: tap "change photo" → pick a file → save on device */
-    var fileInput = document.createElement('input');
-    fileInput.type = 'file'; fileInput.accept = 'image/*'; fileInput.style.display = 'none';
-    document.body.appendChild(fileInput);
-    var targetImg = null;
-    photoImgs.forEach(function (img) {
-      var front = img.closest('.card-front');
-      var btn = document.createElement('button');
-      btn.type = 'button'; btn.className = 'photo-change';
-      btn.textContent = '⤴ change photo';
-      btn.addEventListener('click', function (e) { e.stopPropagation(); targetImg = img; fileInput.value = ''; fileInput.click(); });
-      front.appendChild(btn);
-    });
-    function shrink(dataUrl, cb) {
-      var im = new Image();
-      im.onload = function () {
-        var max = 1400, w = im.naturalWidth, h = im.naturalHeight;
-        if (Math.max(w, h) > max) { var s = max / Math.max(w, h); w = Math.round(w * s); h = Math.round(h * s); }
-        try { var c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(im, 0, 0, w, h); cb(c.toDataURL('image/jpeg', 0.85)); }
-        catch (e) { cb(dataUrl); }
-      };
-      im.onerror = function () { cb(dataUrl); };
-      im.src = dataUrl;
-    }
-    fileInput.addEventListener('change', function () {
-      var f = fileInput.files && fileInput.files[0];
-      if (!f || !targetImg) return;
-      var reader = new FileReader();
-      reader.onload = function () {
-        shrink(reader.result, function (url) {
-          targetImg.src = url;
-          targetImg.closest('.card-front').classList.remove('no-photo');
-          data.photos = data.photos || {};
-          data.photos[targetImg.getAttribute('data-photo')] = url;
-          toast(saveData() ? 'Photo added ♡' : 'Saved, but storage is nearly full');
+      function enableText(on) {
+        textEls.forEach(function (el) {
+          if (on) { el.setAttribute('contenteditable', 'true'); el.setAttribute('spellcheck', 'false'); }
+          else el.removeAttribute('contenteditable');
         });
-      };
-      reader.readAsDataURL(f);
-    });
+      }
 
-    /* mode switching */
-    function setEditing(on) {
-      root.classList.toggle('editing', on);
-      enableText(on);
-      if (on) showAll();
-      try { localStorage.setItem(STORE + '.mode', on ? 'edit' : 'preview'); } catch (e) {}
-    }
+      /* photos: tap "change photo" → pick a file → save on device */
+      var fileInput = document.createElement('input');
+      fileInput.type = 'file'; fileInput.accept = 'image/*'; fileInput.style.display = 'none';
+      document.body.appendChild(fileInput);
+      var targetImg = null;
+      photoImgs.forEach(function (img) {
+        var front = img.closest('.card-front');
+        var btn = document.createElement('button');
+        btn.type = 'button'; btn.className = 'photo-change';
+        btn.textContent = '⤴ change photo';
+        btn.addEventListener('click', function (e) { e.stopPropagation(); targetImg = img; fileInput.value = ''; fileInput.click(); });
+        front.appendChild(btn);
+      });
+      function shrink(dataUrl, cb) {
+        var im = new Image();
+        im.onload = function () {
+          var max = 1400, w = im.naturalWidth, h = im.naturalHeight;
+          if (Math.max(w, h) > max) { var s = max / Math.max(w, h); w = Math.round(w * s); h = Math.round(h * s); }
+          try { var c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(im, 0, 0, w, h); cb(c.toDataURL('image/jpeg', 0.85)); }
+          catch (e) { cb(dataUrl); }
+        };
+        im.onerror = function () { cb(dataUrl); };
+        im.src = dataUrl;
+      }
+      fileInput.addEventListener('change', function () {
+        var f = fileInput.files && fileInput.files[0];
+        if (!f || !targetImg) return;
+        var reader = new FileReader();
+        reader.onload = function () {
+          shrink(reader.result, function (url) {
+            targetImg.src = url;
+            targetImg.closest('.card-front').classList.remove('no-photo');
+            data.photos = data.photos || {};
+            data.photos[targetImg.getAttribute('data-photo')] = url;
+            toast(saveData() ? 'Photo added ♡' : 'Saved, but storage is nearly full');
+          });
+        };
+        reader.readAsDataURL(f);
+      });
 
-    /* the editing toolbar + the "Edit" pill for preview mode */
-    var bar = document.createElement('div');
-    bar.className = 'edit-bar';
-    bar.innerHTML =
-      '<span class="msg">✎ <b>Editing</b> — tap any text to change it, tap a photo to swap it. Saved on this phone.</span>' +
-      '<button type="button" data-act="preview">Preview</button>' +
-      '<button type="button" data-act="download" class="primary">Download final page</button>' +
-      '<button type="button" data-act="reset">Reset</button>';
-    document.body.appendChild(bar);
-    var fab = document.createElement('button');
-    fab.type = 'button'; fab.className = 'edit-fab'; fab.textContent = '✎ Edit';
-    document.body.appendChild(fab);
-    fab.addEventListener('click', function () { setEditing(true); window.scrollTo({ top: 0, behavior: 'smooth' }); });
-    bar.addEventListener('click', function (e) {
-      var b = e.target.closest('button'); if (!b) return;
-      var act = b.getAttribute('data-act');
-      if (act === 'preview') setEditing(false);
-      else if (act === 'download') exportPage();
-      else if (act === 'reset') {
-        if (confirm('Clear all your text and photo changes on this device and start fresh?')) {
-          try { localStorage.removeItem(STORE); } catch (e) {}
+      /* mode switching */
+      function setEditing(on) {
+        root.classList.toggle('editing', on);
+        enableText(on);
+        if (on) showAll();
+        try { localStorage.setItem(STORE + '.mode', on ? 'edit' : 'preview'); } catch (e) {}
+      }
+
+      /* the editing toolbar + the "Edit" pill for preview mode */
+      var bar = document.createElement('div');
+      bar.className = 'edit-bar';
+      bar.innerHTML =
+        '<span class="msg">✎ <b>Editing</b> — tap any text to change it, tap a photo to swap it. Saved on this phone.</span>' +
+        '<button type="button" data-act="preview">Preview</button>' +
+        '<button type="button" data-act="download" class="primary">Download final page</button>' +
+        '<button type="button" data-act="reset">Reset</button>' +
+        '<button type="button" data-act="lock">Lock</button>';
+      document.body.appendChild(bar);
+      var fab = document.createElement('button');
+      fab.type = 'button'; fab.className = 'edit-fab'; fab.textContent = '✎ Edit';
+      document.body.appendChild(fab);
+      fab.addEventListener('click', function () { setEditing(true); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+      bar.addEventListener('click', function (e) {
+        var b = e.target.closest('button'); if (!b) return;
+        var act = b.getAttribute('data-act');
+        if (act === 'preview') setEditing(false);
+        else if (act === 'download') exportPage();
+        else if (act === 'reset') {
+          if (confirm('Clear all your text and photo changes on this device and start fresh?')) {
+            try { localStorage.removeItem(STORE); } catch (e) {}
+            location.reload();
+          }
+        } else if (act === 'lock') {
+          // sign out of editing on this device → back to the locked page
+          try { localStorage.removeItem(UNLOCK_KEY); localStorage.setItem(STORE + '.mode', 'preview'); } catch (e) {}
           location.reload();
         }
+      });
+
+      /* export a locked, self-contained page you can send to her */
+      function bakeImages(done) {
+        var pending = photoImgs.length; if (!pending) return done();
+        photoImgs.forEach(function (img) {
+          if (/^data:/.test(img.getAttribute('src') || '')) { if (--pending === 0) done(); return; }
+          var probe = new Image(); probe.crossOrigin = 'anonymous';
+          probe.onload = function () {
+            try { var c = document.createElement('canvas'); c.width = probe.naturalWidth; c.height = probe.naturalHeight; c.getContext('2d').drawImage(probe, 0, 0); img.src = c.toDataURL('image/jpeg', 0.85); } catch (e) {}
+            if (--pending === 0) done();
+          };
+          probe.onerror = function () { if (--pending === 0) done(); };
+          probe.src = img.src;
+        });
       }
-    });
+      function exportPage() {
+        toast('Preparing your page…');
+        bakeImages(function () {
+          var clone = root.cloneNode(true);
+          clone.setAttribute('data-locked', '');
+          clone.setAttribute('class', 'js');
+          $$('.edit-bar, .edit-fab, .toast, .photo-change, .owner-lock, input[type=file]', clone).forEach(function (n) { n.remove(); });
+          $$('[contenteditable]', clone).forEach(function (n) { n.removeAttribute('contenteditable'); n.removeAttribute('spellcheck'); });
+          $$('[data-edit]', clone).forEach(function (n) { n.removeAttribute('data-edit'); n.removeAttribute('data-placeholder'); });
+          $$('[data-photo]', clone).forEach(function (n) { n.removeAttribute('data-photo'); });
+          var html = '<!DOCTYPE html>\n' + clone.outerHTML;
+          var a = document.createElement('a');
+          a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+          a.download = 'for-her.html';
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+          toast('Downloaded — that file is her page ♡');
+        });
+      }
 
-    /* export a locked, self-contained page you can send to her */
-    function bakeImages(done) {
-      var pending = photoImgs.length; if (!pending) return done();
-      photoImgs.forEach(function (img) {
-        if (/^data:/.test(img.getAttribute('src') || '')) { if (--pending === 0) done(); return; }
-        var probe = new Image(); probe.crossOrigin = 'anonymous';
-        probe.onload = function () {
-          try { var c = document.createElement('canvas'); c.width = probe.naturalWidth; c.height = probe.naturalHeight; c.getContext('2d').drawImage(probe, 0, 0); img.src = c.toDataURL('image/jpeg', 0.85); } catch (e) {}
-          if (--pending === 0) done();
-        };
-        probe.onerror = function () { if (--pending === 0) done(); };
-        probe.src = img.src;
-      });
-    }
-    function exportPage() {
-      toast('Preparing your page…');
-      bakeImages(function () {
-        var clone = root.cloneNode(true);
-        clone.setAttribute('data-locked', '');
-        clone.setAttribute('class', 'js');
-        $$('.edit-bar, .edit-fab, .toast, .photo-change, input[type=file]', clone).forEach(function (n) { n.remove(); });
-        $$('[contenteditable]', clone).forEach(function (n) { n.removeAttribute('contenteditable'); n.removeAttribute('spellcheck'); });
-        $$('[data-edit]', clone).forEach(function (n) { n.removeAttribute('data-edit'); n.removeAttribute('data-placeholder'); });
-        $$('[data-photo]', clone).forEach(function (n) { n.removeAttribute('data-photo'); });
-        var html = '<!DOCTYPE html>\n' + clone.outerHTML;
-        var a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
-        a.download = 'for-her.html';
-        document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
-        toast('Downloaded — that file is her page ♡');
-      });
+      var mode = null; try { mode = localStorage.getItem(STORE + '.mode'); } catch (e) {}
+      setEditing(startEditing || mode !== 'preview');
     }
 
-    /* start in edit mode (unless you last chose preview on this device) */
-    var mode = null; try { mode = localStorage.getItem(STORE + '.mode'); } catch (e) {}
-    setEditing(mode !== 'preview');
+    /* How editing becomes available:
+       - page not locked → editor is on directly
+       - locked but you already unlocked on this device → editor on
+       - locked → a discreet lock button (bottom-left) asks for the password */
+    if (EDITABLE || isUnlocked()) {
+      enableEditor(false);
+    } else {
+      var lockBtn = document.createElement('button');
+      lockBtn.type = 'button'; lockBtn.className = 'owner-lock'; lockBtn.setAttribute('aria-label', 'Owner login');
+      lockBtn.textContent = '🔒';
+      document.body.appendChild(lockBtn);
+      lockBtn.addEventListener('click', function () {
+        var pw = window.prompt('Enter password to edit:');
+        if (pw == null) return;
+        if (hashStr(pw) === PASS_HASH) {
+          try { localStorage.setItem(UNLOCK_KEY, '1'); } catch (e) {}
+          lockBtn.remove();
+          enableEditor(true);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          toast('Wrong password');
+        }
+      });
+    }
   })();
   </script>
 
